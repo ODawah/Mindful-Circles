@@ -18,11 +18,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(circles.router)
-app.include_router(memberships.router)
-app.include_router(questions.router)
-app.include_router(answers.router)
+def include_api_routes(prefix: str = "") -> None:
+    app.include_router(auth.router, prefix=prefix)
+    app.include_router(circles.router, prefix=prefix)
+    app.include_router(memberships.router, prefix=prefix)
+    app.include_router(questions.router, prefix=prefix)
+    app.include_router(answers.router, prefix=prefix)
+
+
+include_api_routes()
+include_api_routes("/api")
 
 @app.on_event("startup")
 def startup():
@@ -32,3 +37,7 @@ def startup():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/api/health")
+def prefixed_health():
+    return health()

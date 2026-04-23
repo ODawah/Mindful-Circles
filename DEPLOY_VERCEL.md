@@ -1,9 +1,9 @@
 # Deploy Mindful Circles on Vercel
 
-This repo should be deployed as two Vercel projects plus one Turso database:
+This repo can be deployed as one Vercel Services project plus one Turso database:
 
-- `mindful-circles-api`: FastAPI backend from the `backend` directory.
-- `mindful-circles-web`: Vite React frontend from the `frontend` directory.
+- `frontend`: Vite React frontend from the `frontend` directory, mounted at `/`.
+- `backend`: FastAPI backend from the `backend` directory, mounted at `/api`.
 - Turso: SQLite/libSQL database connected to the backend.
 
 ## 1. Create the database
@@ -13,17 +13,33 @@ This repo should be deployed as two Vercel projects plus one Turso database:
 3. Create/copy a Turso auth token.
 4. Keep both values private.
 
-## 2. Deploy the backend
+## 2. Deploy the Vercel project
 
-Create a new Vercel project from the same GitHub repo.
+Create a new Vercel project from the GitHub repo.
 
 Project settings:
 
-- Root Directory: `backend`
-- Framework Preset: Other / FastAPI auto-detected
-- Build Command: `alembic upgrade head`
-- Output Directory: leave empty
-- Install Command: leave default
+- Application Preset: `Services`
+- Root Directory: repo root
+
+The root `vercel.json` defines the services:
+
+```json
+{
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "vite"
+    },
+    "backend": {
+      "entrypoint": "backend",
+      "routePrefix": "/api",
+      "framework": "fastapi"
+    }
+  }
+}
+```
 
 Environment variables:
 
@@ -40,7 +56,7 @@ ENABLE_SCHEDULER=false
 Deploy it, then open:
 
 ```text
-https://your-backend.vercel.app/health
+https://your-project.vercel.app/api/health
 ```
 
 Expected response:
@@ -49,41 +65,25 @@ Expected response:
 {"status":"ok"}
 ```
 
-## 3. Deploy the frontend
+## 3. Update backend CORS
 
-Create a second Vercel project from the same GitHub repo.
-
-Project settings:
-
-- Root Directory: `frontend`
-- Framework Preset: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
-
-Environment variables:
+After the project has its final Vercel URL, update the environment variable:
 
 ```text
-VITE_API_BASE_URL=https://your-backend.vercel.app
+FRONTEND_ORIGINS=https://your-project.vercel.app
 ```
 
-Deploy it.
-
-## 4. Update backend CORS
-
-After the frontend has its final Vercel URL, update the backend project environment variable:
-
-```text
-FRONTEND_ORIGINS=https://your-frontend.vercel.app
-```
-
-Redeploy the backend after changing this value.
+Redeploy after changing this value.
 
 For previews or custom domains, add comma-separated origins:
 
 ```text
-FRONTEND_ORIGINS=https://your-frontend.vercel.app,https://www.yourdomain.com
+FRONTEND_ORIGINS=https://your-project.vercel.app,https://www.yourdomain.com
 ```
 
-## 5. Important serverless note
+The frontend defaults to `VITE_API_BASE_URL=/api`, so it can call the backend
+through the same Vercel domain without extra CORS work.
+
+## 4. Important serverless note
 
 Vercel does not keep a normal always-running Python server process. The backend now creates today's question lazily when `/circles/{circle_id}/questions/today` is called, so it does not depend on a background scheduler in production.
