@@ -7,15 +7,14 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from app.core.config import settings
-from app.database import Base
+from app.database import Base, build_connect_args, build_database_url
 import app.models  # ensures all models are registered
 
 # Alembic Config object
 config = context.config
 
-# Set the DB URL from your .env (overrides alembic.ini)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Set the DB URL from your environment (overrides alembic.ini)
+config.set_main_option("sqlalchemy.url", build_database_url())
 
 # Set up logging
 if config.config_file_name is not None:
@@ -42,11 +41,13 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=build_connect_args(),
     )
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata
+            target_metadata=target_metadata,
+            render_as_batch=connection.dialect.name in {"sqlite", "libsql"},
         )
         with context.begin_transaction():
             context.run_migrations()

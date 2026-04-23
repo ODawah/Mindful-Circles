@@ -18,12 +18,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "questions",
-        sa.Column("asked_date", sa.Date(), server_default=sa.text("CURRENT_DATE"), nullable=False),
-    )
+    if op.get_context().dialect.name in {"sqlite", "libsql"}:
+        with op.batch_alter_table("questions") as batch_op:
+            batch_op.add_column(
+                sa.Column("asked_date", sa.Date(), server_default=sa.text("CURRENT_DATE"), nullable=False),
+            )
+    else:
+        op.add_column(
+            "questions",
+            sa.Column("asked_date", sa.Date(), server_default=sa.text("CURRENT_DATE"), nullable=False),
+        )
     op.create_index(op.f("ix_questions_asked_date"), "questions", ["asked_date"], unique=False)
-    op.alter_column("questions", "asked_date", server_default=None)
+    if op.get_context().dialect.name not in {"sqlite", "libsql"}:
+        op.alter_column("questions", "asked_date", server_default=None)
 
 
 def downgrade() -> None:

@@ -1,17 +1,17 @@
 # Deploy Mindful Circles on Vercel
 
-This repo should be deployed as two Vercel projects plus one Postgres database:
+This repo should be deployed as two Vercel projects plus one Turso database:
 
 - `mindful-circles-api`: FastAPI backend from the `backend` directory.
 - `mindful-circles-web`: Vite React frontend from the `frontend` directory.
-- Neon Postgres: free serverless Postgres connected to the backend.
+- Turso: SQLite/libSQL database connected to the backend.
 
 ## 1. Create the database
 
-1. In Vercel, open Marketplace and install the Neon Postgres integration.
-2. Create a free Neon database.
-3. Copy the pooled or direct Postgres connection string.
-4. Make sure the connection string includes SSL, usually `?sslmode=require`.
+1. Create a Turso database.
+2. Copy the database URL. It should look like `libsql://...turso.io`.
+3. Create/copy a Turso auth token.
+4. Keep both values private.
 
 ## 2. Deploy the backend
 
@@ -28,7 +28,8 @@ Project settings:
 Environment variables:
 
 ```text
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require
+TURSO_DATABASE_URL=libsql://your-database-your-org.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
 SECRET_KEY=replace-with-a-long-random-secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440

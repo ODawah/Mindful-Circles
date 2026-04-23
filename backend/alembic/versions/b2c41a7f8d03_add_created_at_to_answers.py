@@ -18,10 +18,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "answers",
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+    column = sa.Column(
+        "created_at",
+        sa.DateTime(timezone=True),
+        server_default=sa.text("CURRENT_TIMESTAMP"),
+        nullable=False,
     )
+    if op.get_context().dialect.name in {"sqlite", "libsql"}:
+        with op.batch_alter_table("answers") as batch_op:
+            batch_op.add_column(column)
+    else:
+        op.add_column("answers", column)
 
 
 def downgrade() -> None:
